@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TTS Модуль (Динамик)</title>
+    <style>
+        body {
+            background-color: #1a1a1a;
+            color: #ffffff;
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+        #status { color: #4caf50; font-weight: bold; }
+        #last-tts { color: #ffeb3b; }
+    </style>
+</head>
+<body>
+    <h2>Динамик для бота 🔊</h2>
+    <p>Статус: <span id="status">Ожидаю сообщения...</span></p>
+    <p>Последняя озвучка: <span id="last-tts">пусто</span></p>
+
+    <script>
+        const statusEl = document.getElementById('status');
+        const lastTtsEl = document.getElementById('last-tts');
+
+        function checkTtsQueue() {
+            fetch('http://localhost/api/tts/next')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        // Меняем текст на экране
+                        statusEl.innerText = "Озвучиваю...";
+                        statusEl.style.color = "#ffeb3b";
+                        lastTtsEl.innerText = data.username + ": " + data.message;
+
+                        // Формируем фразу для синтезатора
+                        const textToSpeak = data.username + " пишет: " + data.message;
+                        speakText(textToSpeak);
+                    }
+                })
+                .catch(error => {
+                    console.error("Ошибка проверки TTS:", error);
+                });
+        }
+
+        function speakText(text) {
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'ru-RU'; 
+            utterance.rate = 1.1; 
+            
+            // Когда бот закончил говорить, возвращаем статус обратно
+            utterance.onend = function() {
+                statusEl.innerText = "Ожидаю сообщения...";
+                statusEl.style.color = "#4caf50";
+            };
+
+            window.speechSynthesis.speak(utterance);
+        }
+
+        // Важный момент для браузеров: иногда им нужен первый "клик" по странице, 
+        // чтобы разрешить воспроизведение звука. Но в OBS Browser Source это работает сразу.
+        
+        // Стучимся в базу каждые 2 секунды
+        setInterval(checkTtsQueue, 2000);
+    </script>
+</body>
+</html>

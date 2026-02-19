@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Голосовой модуль для Twitch-бота</title>
+    <style>
+        /* Делаем черный фон и белый текст, чтобы было удобно тестировать,
+           в OBS мы потом сделаем фон прозрачным */
+        body {
+            background-color: #1a1a1a;
+            color: #ffffff;
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+        #status { color: #ffeb3b; }
+        #last-phrase { color: #4caf50; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h2>Слухач для бота 🎧</h2>
+    <p>Статус: <span id="status">Запуск...</span></p>
+    <p>Последняя фраза: <span id="last-phrase">пока ничего</span></p>
+
+    <script>
+        // Проверяем, поддерживает ли браузер распознавание речи
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        
+        if (!SpeechRecognition) {
+            document.getElementById('status').innerText = "Ошибка: Браузер не поддерживает Web Speech API.";
+            document.getElementById('status').style.color = "red";
+        } else {
+            const recognition = new SpeechRecognition();
+            
+            // Настройки распознавания
+            recognition.lang = 'ru-RU'; // Слушаем русский язык
+            recognition.continuous = true; // Слушаем постоянно, не выключаемся после одной фразы
+            recognition.interimResults = false; // Ждем, пока ты договоришь фразу до конца
+
+            const statusEl = document.getElementById('status');
+            const lastPhraseEl = document.getElementById('last-phrase');
+
+            // Когда распознавание началось
+            recognition.onstart = function() {
+                statusEl.innerText = "Слушаю твой голос...";
+                statusEl.style.color = "#4caf50";
+            };
+
+            // Когда скрипт понял фразу
+            recognition.onresult = function(event) {
+                // Достаем текст из события
+                const current = event.resultIndex;
+                const transcript = event.results[current][0].transcript.trim();
+                
+                lastPhraseEl.innerText = transcript;
+                console.log("Распознано: ", transcript);
+
+                // Если фраза начинается со слова "бот", отправляем в Laravel
+                if (transcript.toLowerCase().startsWith("тренер")) {
+                    sendToLaravel(transcript);
+                }
+            };
+
+            // Если произошла ошибка (например, пропал микрофон)
+            recognition.onerror = function(event) {
+                console.error("Ошибка распознавания: ", event.error);
+                statusEl.innerText = "Ошибка: " + event.error;
+                statusEl.style.color = "red";
+            };
+
+            // Если микрофон "уснул" (Chrome иногда так делает), запускаем заново
+            recognition.onend = function() {
+                statusEl.innerText = "Перезапуск слушателя...";
+                statusEl.style.color = "#ffeb3b";
+                setTimeout(() => {
+                    recognition.start();
+                }, 1000);
+            };
+
+            // Функция отправки текста на твой бэкенд Laravel
+            function sendToLaravel(text) {
+                // Пока мы просто выводим в консоль, так как API на Laravel еще не готово
+                console.log("🚀 Отправляю в Laravel: " + text);
+                
+                fetch('http://localhost/api/voice-command', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ command: text })
+                })
+                .then(response => console.log("Ответ от Laravel получен!"))
+                .catch(error => console.error("Ошибка отправки в Laravel:", error));
+            }
+
+            // Запускаем слушатель
+            recognition.start();
+        }
+
+        
+    </script>
+</body>
+</html>
