@@ -1,29 +1,24 @@
 <?php
 
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\VoiceCommandController;
+use Illuminate\Http\Request;
 use App\Models\TtsMessage;
 
-Route::get('/user', function (Request $request) {
-    return $request->user();
-})->middleware('auth:sanctum');
-
-Route::post('/voice-command', [VoiceCommandController::class, 'handle']);
-
-Route::get('/tts/next', function () {
-    // Берем самое старое неозвученное сообщение
-    $tts = TtsMessage::oldest()->first();
+Route::get('/tts/{channel}/next', function ($channel) {
+    // Берем самое старое сообщение ТОЛЬКО для запрошенного канала
+    $message = TtsMessage::where('channel', $channel)->oldest()->first();
     
-    if ($tts) {
+    if ($message) {
         $data = [
             'status' => 'success', 
-            'username' => $tts->username, 
-            'message' => $tts->message
+            'username' => $message->username, 
+            'message' => $message->message
         ];
-        $tts->delete(); // Удаляем, чтобы не озвучить дважды
+        
+        $message->delete(); 
+        
         return response()->json($data);
     }
-    
+
     return response()->json(['status' => 'empty']);
 });

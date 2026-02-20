@@ -23,9 +23,23 @@
     <script>
         const statusEl = document.getElementById('status');
         const lastTtsEl = document.getElementById('last-tts');
+        
+        // Читаем название канала из ссылки (например ?channel=cs_stream)
+        const urlParams = new URLSearchParams(window.location.search);
+        const currentChannel = urlParams.get('channel');
+
+        if (!currentChannel) {
+            statusEl.innerText = "Ошибка: не указан канал в URL!";
+            statusEl.style.color = "red";
+        }
+
+        let isSpeaking = false; 
 
         function checkTtsQueue() {
-            fetch('/api/tts/next')
+            if (!currentChannel || isSpeaking || window.speechSynthesis.speaking) return;
+
+            // Запрашиваем сообщения только для своего канала
+            fetch(`/api/tts/${currentChannel}/next`)
                 .then(response => response.json())
                 .then(data => {
                     if (data.status === 'success') {
