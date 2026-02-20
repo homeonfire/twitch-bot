@@ -2,71 +2,94 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Голосовой помощник Twitch</title>
+    <title>Голосовой помощник Twitch (Debug)</title>
     <style>
         body { background: #18181b; color: white; font-family: sans-serif; padding: 20px; text-align: center; }
         #status { font-size: 24px; font-weight: bold; color: #4caf50; margin-bottom: 20px; }
-        #log { color: #aaa; font-size: 16px; margin-top: 20px; }
+        /* Красивое окошко для логов прямо на экране */
+        #log-container { background: #000; color: #0f0; font-family: monospace; font-size: 14px; text-align: left; padding: 15px; border-radius: 8px; height: 400px; overflow-y: auto; white-space: pre-wrap; margin-top: 20px; border: 1px solid #333;}
     </style>
 </head>
 <body>
     <div id="status">Загрузка настроек...</div>
-    <div id="log">Ожидание...</div>
+    <div id="log-container">Ожидание событий...<br></div>
 
     <script>
         const statusEl = document.getElementById('status');
-        const logEl = document.getElementById('log');
+        const logEl = document.getElementById('log-container');
         
-        // 1. Достаем канал из URL
+        // Функция для вывода логов и в консоль (F12), и на экран
+        function debugLog(message, data = '') {
+            const time = new Date().toLocaleTimeString();
+            const logText = `[${time}] ${message} ${typeof data === 'object' ? JSON.stringify(data) : data}`;
+            console.log(logText);
+            logEl.innerHTML = logText + "<br>" + logEl.innerHTML; // Добавляем сверху
+        }
+
         const urlParams = new URLSearchParams(window.location.search);
         const currentChannel = urlParams.get('channel');
-        let wakeWord = "бот"; // По умолчанию
+        let wakeWord = "бот"; 
+
+        debugLog("🔄 Инициализация. Канал из URL:", currentChannel);
 
         if (!currentChannel) {
-            statusEl.innerText = "Ошибка: не указан канал в URL!";
+            statusEl.innerText = "Ошибка: не указан канал!";
             statusEl.style.color = "red";
+            debugLog("❌ КРИТИЧЕСКАЯ ОШИБКА: В ссылке нет ?channel=ТВОЙ_КАНАЛ");
         } else {
-            // 2. Получаем настройки канала с сервера
+            debugLog("🌐 Стучимся на сервер за настройками канала...");
             fetch(`/api/voice/${currentChannel}/settings`)
-                .then(res => res.json())
+                .then(res => {
+                    debugLog("📡 Ответ сервера (статус):", res.status);
+                    return res.json();
+                })
                 .then(data => {
+                    debugLog("📦 Получены настройки из БД:", data);
                     if (data.wake_word) {
-                        wakeWord = data.wake_word;
+                        wakeWord = data.wake_word.toLowerCase().trim();
+                        debugLog(`✅ Установлено кодовое слово: "${wakeWord}"`);
                         statusEl.innerText = `Микрофон включен. Скажи: "${wakeWord} ..."`;
                         startListening();
                     } else {
-                        statusEl.innerText = "Ошибка: бот не найден в базе!";
+                        statusEl.innerText = "Ошибка: бот не найден!";
                         statusEl.style.color = "red";
+                        debugLog("❌ ОШИБКА: Бот не найден в базе данных или выключен.");
                     }
-                });
+                })
+                .catch(err => debugLog("❌ ОШИБКА сети при получении настроек:", err));
         }
 
         function startListening() {
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
             if (!SpeechRecognition) {
-                statusEl.innerText = "Ваш браузер не поддерживает распознавание речи (нужен Chrome).";
+                statusEl.innerText = "Ваш браузер не поддерживает распознавание речи.";
+                debugLog("❌ ОШИБКА: Браузер не поддерживает SpeechRecognition (нужен Chrome/Edge).");
                 return;
             }
 
             const recognition = new SpeechRecognition();
             recognition.lang = 'ru-RU';
-            recognition.continuous = true; // Слушаем постоянно
+            recognition.continuous = true; 
             recognition.interimResults = false;
 
-            recognition.onresult = function(event) {
-                const transcript = event.results[event.results.length - 1][0].transcript.toLowerCase().trim();
-                console.log("Услышал:", transcript);
+            recognition.onstart = function() {
+                debugLog("🎤 Микрофон активирован, слушаю...");
+            };
 
-                // Ищем кодовое слово в начале фразы
+            recognition.onresult = function(event) {
+                const rawTranscript = event.results[event.results.length - 1][0].transcript;
+                const transcript = rawTranscript.toLowerCase().trim();
+                
+                debugLog(`🗣️ УСЛЫШАЛ: "${transcript}"`);
+
                 if (transcript.startsWith(wakeWord)) {
-                    logEl.innerText = "Запрос отправлен нейросети: " + transcript;
-                    statusEl.innerText = "Думаю...";
+                    debugLog("✅ КОДОВОЕ СЛОВО СОВПАЛО!");
+                    statusEl.innerText = "Отправляю запрос...";
                     statusEl.style.color = "#ffeb3b";
                     
-                    // Вырезаем кодовое слово, оставляем только суть вопроса
                     const question = transcript.substring(wakeWord.length).trim();
+                    debugLog(`❓ Вопрос для отправки: "${question}"`);
 
-                    // Отправляем вопрос на сервер
                     fetch(`/api/voice/${currentChannel}/ask`, {
                         method: 'POST',
                         headers: {
@@ -74,23 +97,40 @@
                             'Accept': 'application/json'
                         },
                         body: JSON.stringify({ text: question })
-                    }).then(() => {
+                    })
+                    .then(res => {
+                        debugLog(`📡 Ответ от DeepSeek (HTTP ${res.status})`);
+                        return res.json();
+                    })
+                    .then(data => {
+                        debugLog("📦 Результат от сервера:", data);
                         statusEl.innerText = `Микрофон включен. Скажи: "${wakeWord} ..."`;
                         statusEl.style.color = "#4caf50";
+                    })
+                    .catch(err => {
+                        debugLog("❌ ОШИБКА при запросе к серверу/DeepSeek:", err);
+                        statusEl.innerText = "Ошибка сети!";
+                        statusEl.style.color = "red";
                     });
+                } else {
+                    debugLog("⚠️ Кодовое слово не найдено. Игнорирую.");
                 }
             };
 
             recognition.onerror = function(event) {
-                console.error("Ошибка микрофона:", event.error);
+                debugLog("❌ ОШИБКА микрофона:", event.error);
             };
 
             recognition.onend = function() {
-                // Если микрофон случайно отвалился, запускаем заново (защита от дисконнектов)
-                recognition.start();
+                debugLog("🔄 Микрофон выключился. Перезапускаю...");
+                setTimeout(() => recognition.start(), 1000);
             };
 
-            recognition.start();
+            try {
+                recognition.start();
+            } catch(e) {
+                debugLog("❌ Ошибка при старте микрофона:", e);
+            }
         }
     </script>
 </body>
