@@ -12,5 +12,6 @@ class TwitchBot extends Model
         'twitch_channel',
         'system_prompt',
         'is_active',
+        'wake_word',
     ];
 }

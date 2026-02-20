@@ -44,6 +44,11 @@ class TwitchBotResource extends Resource
                     ->rows(5)
                     ->columnSpanFull()
                     ->default('Ты помощник на Twitch. Отвечай коротко и с юмором.'),
+                Forms\Components\TextInput::make('wake_word')
+                    ->label('Кодовое слово (для voice.html)')
+                    ->required()
+                    ->default('бот')
+                    ->maxLength(255),
             ]);
     }
 
