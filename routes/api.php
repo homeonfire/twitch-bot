@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 use App\Models\TtsMessage;
 use App\Models\TwitchBot;
+use App\Models\OutgoingChatMessage;
 
 Route::get('/tts/{channel}/next', function ($channel) {
     // Берем самое старое сообщение ТОЛЬКО для запрошенного канала
@@ -60,10 +61,16 @@ Route::post('/voice/{channel}/ask', function (Request $request, $channel) {
         if ($response->successful()) {
             $reply = $response->json('choices.0.message.content');
             
-            // 🚀 Сохраняем ответ в очередь TTS ИМЕННО ЭТОГО канала
+            // Сохраняем в очередь TTS (это у тебя уже есть)
             TtsMessage::create([
                 'channel' => $channel,
-                'username' => $bot->bot_username, // Бот отвечает от своего имени
+                'username' => $bot->bot_username,
+                'message' => $reply
+            ]);
+
+            // 🚀 ДОБАВЛЯЕМ ВОТ ЭТО: Сохраняем в очередь чата Twitch
+            OutgoingChatMessage::create([
+                'channel' => $channel,
                 'message' => $reply
             ]);
 

@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Log;
 use App\Models\Viewer;
 use App\Models\TtsMessage;
 use App\Models\TwitchBot;
+use App\Models\OutgoingChatMessage;
 
 class TwitchListen extends Command
 {
@@ -38,6 +39,9 @@ class TwitchListen extends Command
         $lastMessageTime = 0; 
         $messageDelay = 1.5; 
         $ignoredUsers = ['nightbot', 'streamelements', 'streamlabs', 'moobot', 'fossabot'];
+
+        // 🚀 ТАЙМЕР ДЛЯ ПРОВЕРКИ БАЗЫ
+        $lastDbCheckTime = 0;
 
         while (true) {
             // Проверяем, не выключили ли бота через админку прямо во время работы
@@ -105,7 +109,6 @@ class TwitchListen extends Command
                                     'message' => mb_substr($ttsText, 0, 150)
                                 ]);
                                 $this->info("🔊 Добавлено в очередь TTS для {$twitchChannel}");
-                                $messageQueue[] = "@$username, улетело на озвучку!";
                             }
                             continue; 
                         }
@@ -118,6 +121,18 @@ class TwitchListen extends Command
                         }
                     }
                 }
+
+                // 🚀 ПРОВЕРЯЕМ БАЗУ РАЗ В 2 СЕКУНДЫ НА НАЛИЧИЕ НОВЫХ ОТВЕТОВ ДЛЯ ЧАТА
+                if (microtime(true) - $lastDbCheckTime >= 2.0) {
+                    $outgoing = OutgoingChatMessage::where('channel', $twitchChannel)->oldest()->first();
+                    if ($outgoing) {
+                        $this->info("📥 Найдено сообщение из базы для чата: {$outgoing->message}");
+                        $messageQueue[] = $outgoing->message; // Кидаем в очередь на отправку
+                        $outgoing->delete(); // Удаляем, чтобы не отправить дважды
+                    }
+                    $lastDbCheckTime = microtime(true);
+                }
+
 
                 if (!empty($messageQueue) && (microtime(true) - $lastMessageTime) >= $messageDelay) {
                     $msgToSend = array_shift($messageQueue);
