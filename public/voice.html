@@ -82,7 +82,7 @@
                 // Пока мы просто выводим в консоль, так как API на Laravel еще не готово
                 console.log("🚀 Отправляю в Laravel: " + text);
                 
-                fetch('http://localhost/api/voice-command', {
+                fetch('/api/voice-command', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
