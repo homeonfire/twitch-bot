@@ -9,6 +9,7 @@ use App\Models\Viewer;
 use App\Models\TtsMessage;
 use App\Models\TwitchBot;
 use App\Models\OutgoingChatMessage;
+use App\Models\ChatMessage;
 
 class TwitchListen extends Command
 {
@@ -92,6 +93,12 @@ class TwitchListen extends Command
                             'username' => $lowerUsername
                         ]);
                         $viewer->increment('messages_count');
+                        // 🚀 СОХРАНЯЕМ КАЖДОЕ СООБЩЕНИЕ В ИСТОРИЮ
+                        ChatMessage::create([
+                            'channel' => $twitchChannel,
+                            'username' => $username,
+                            'message' => $message
+                        ]);
 
                         if (!in_array($username, $greetedUsers)) {
                             $greetedUsers[] = $username; 
@@ -119,7 +126,8 @@ class TwitchListen extends Command
                         // 🚀 ПЕРЕДАЕМ ИНДИВИДУАЛЬНЫЙ ПРОМПТ
                         if (stripos($message, "@$twitchUser") !== false) {
                             $cleanMessage = trim(str_ireplace("@$twitchUser", "", $message));
-                            $reply = $this->askDeepSeek($username, $cleanMessage, $systemPrompt);
+                            // Добавили $twitchChannel четвертым аргументом
+                            $reply = $this->askDeepSeek($username, $cleanMessage, $systemPrompt, $twitchChannel); 
                             $messageQueue[] = "@$username, $reply";
                         }
                     }
@@ -167,16 +175,32 @@ class TwitchListen extends Command
         fwrite($socket, "PRIVMSG #" . $channel . " :" . $cleanMessage . "\r\n");
     }
 
-    private function askDeepSeek($username, $text, $systemPrompt)
+    // 🚀 ДОБАВИЛИ $channel В АРГУМЕНТЫ
+    private function askDeepSeek($username, $text, $systemPrompt, $channel)
     {
+        // 1. Достаем последние 20 сообщений из этого канала
+        $history = ChatMessage::where('channel', $channel)
+            ->latest() // Берем с конца (самые новые)
+            ->take(20)
+            ->get()
+            ->reverse(); // Переворачиваем, чтобы они шли друг за другом по времени
+
+        // 2. Формируем текст контекста
+        $contextText = "Вот последние сообщения из чата для контекста:\n";
+        foreach ($history as $msg) {
+            $contextText .= "{$msg->username}: {$msg->message}\n";
+        }
+        
+        $contextText .= "\nА теперь ответь пользователю {$username} на его сообщение: {$text}";
+
         try {
             $response = Http::withToken(env('DEEPSEEK_API_KEY'))
                 ->timeout(15)
                 ->post('https://api.deepseek.com/chat/completions', [
                     'model' => 'deepseek-chat',
                     'messages' => [
-                        ['role' => 'system', 'content' => $systemPrompt], // Используем промпт из БД
-                        ['role' => 'user', 'content' => "Зритель $username пишет: $text"]
+                        ['role' => 'system', 'content' => $systemPrompt],
+                        ['role' => 'user', 'content' => $contextText] // 🚀 ОТПРАВЛЯЕМ СКЛЕЕННЫЙ КОНТЕКСТ
                     ]
                 ]);
 
