@@ -39,7 +39,7 @@ class TwitchListen extends Command
         $messageQueue = []; 
         $lastMessageTime = 0; 
         $messageDelay = 1.5; 
-        $ignoredUsers = ['nightbot', 'streamelements', 'streamlabs', 'moobot', 'fossabot'];
+        $ignoredUsers = ['nightbot', 'streamelements', 'streamlabs', 'moobot', 'fossabot','trenertvs_neaibot','arcyfor'];
 
         // 🚀 ТАЙМЕР ДЛЯ ПРОВЕРКИ БАЗЫ
         $lastDbCheckTime = 0;
