@@ -7,10 +7,21 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-class User extends Authenticatable
+use Filament\Models\Contracts\FilamentUser;
+use Filament\Panel;
+
+class User extends Authenticatable implements FilamentUser
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable;
+
+    // 🚀 3. ДОБАВЛЯЕМ МЕТОД РАЗРЕШЕНИЯ ДОСТУПА (вставляем прямо внутри класса)
+    public function canAccessPanel(Panel $panel): bool
+    {
+        // Возвращаем true, чтобы пускать тебя в панель. 
+        // (При желании тут можно написать: return $this->email === 'твой@email.com';)
+        return true; 
+    }
 
     /**
      * The attributes that are mass assignable.
