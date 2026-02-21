@@ -56,6 +56,18 @@ class TwitchBotResource extends Resource
                     ->required()
                     ->default('бот')
                     ->maxLength(255),
+                    Forms\Components\Section::make('Настройки озвучки (ElevenLabs)')
+                    ->description('Оставьте пустыми, чтобы использовать стандартную озвучку браузера.')
+                    ->schema([
+                        Forms\Components\TextInput::make('elevenlabs_api_key')
+                            ->label('API Ключ (xi-api-key)')
+                            ->password() // Прячем ключ звездочками
+                            ->revealable()
+                            ->maxLength(255),
+                        Forms\Components\TextInput::make('elevenlabs_voice_id')
+                            ->label('Voice ID (ID голоса)')
+                            ->maxLength(255),
+                    ])->columns(2),
             ]);
     }
 

@@ -2,81 +2,68 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TTS Модуль (Динамик)</title>
-    <style>
-        body {
-            background-color: #1a1a1a;
-            color: #ffffff;
-            font-family: Arial, sans-serif;
-            padding: 20px;
-        }
-        #status { color: #4caf50; font-weight: bold; }
-        #last-tts { color: #ffeb3b; }
-    </style>
+    <title>TTS Player</title>
 </head>
 <body>
-    <h2>Динамик для бота 🔊</h2>
-    <p>Статус: <span id="status">Ожидаю сообщения...</span></p>
-    <p>Последняя озвучка: <span id="last-tts">пусто</span></p>
-
     <script>
-        const statusEl = document.getElementById('status');
-        const lastTtsEl = document.getElementById('last-tts');
-        
-        // Читаем название канала из ссылки (например ?channel=cs_stream)
         const urlParams = new URLSearchParams(window.location.search);
         const currentChannel = urlParams.get('channel');
 
-        if (!currentChannel) {
-            statusEl.innerText = "Ошибка: не указан канал в URL!";
-            statusEl.style.color = "red";
+        function fallbackSpeech(text, callback) {
+            const utterThis = new SpeechSynthesisUtterance(text);
+            utterThis.lang = 'ru-RU';
+            utterThis.rate = 1.1; // Чуть быстрее обычного
+            
+            utterThis.onend = function() {
+                setTimeout(callback, 1000); // Ждем секунду и проверяем дальше
+            };
+            
+            utterThis.onerror = function() {
+                setTimeout(callback, 1000);
+            };
+
+            window.speechSynthesis.speak(utterThis);
         }
 
-        let isSpeaking = false; 
+        function pollTts() {
+            if (!currentChannel) return;
 
-        function checkTtsQueue() {
-            if (!currentChannel || isSpeaking || window.speechSynthesis.speaking) return;
-
-            // Запрашиваем сообщения только для своего канала
-            fetch(`/api/tts/${currentChannel}/next`)
-                .then(response => response.json())
+            fetch(`/api/tts/${currentChannel}/pop`)
+                .then(res => res.json())
                 .then(data => {
-                    if (data.status === 'success') {
-                        // Меняем текст на экране
-                        statusEl.innerText = "Озвучиваю...";
-                        statusEl.style.color = "#ffeb3b";
-                        lastTtsEl.innerText = data.username + ": " + data.message;
-
-                        // Формируем фразу для синтезатора
-                        const textToSpeak = data.username + " пишет: " + data.message;
-                        speakText(textToSpeak);
+                    if (data.text) {
+                        // Если сервер прислал нам сгенерированное аудио от ElevenLabs
+                        if (data.audio_base64) {
+                            console.log("Воспроизвожу ElevenLabs MP3...");
+                            const audio = new Audio(data.audio_base64);
+                            
+                            audio.onended = () => {
+                                setTimeout(pollTts, 1000);
+                            };
+                            
+                            // Если браузер заблокировал автовоспроизведение
+                            audio.play().catch(e => {
+                                console.error("Ошибка воспроизведения аудио, включаю фоллбэк:", e);
+                                fallbackSpeech(data.text, pollTts);
+                            });
+                        } else {
+                            // Если токенов нет или API не настроен - старый добрый робот
+                            console.log("Токенов нет, читаю обычным голосом...");
+                            fallbackSpeech(data.text, pollTts);
+                        }
+                    } else {
+                        // Очередь пуста, проверяем через 2 секунды
+                        setTimeout(pollTts, 2000);
                     }
                 })
-                .catch(error => {
-                    console.error("Ошибка проверки TTS:", error);
+                .catch(err => {
+                    console.error("Ошибка связи с сервером:", err);
+                    setTimeout(pollTts, 5000);
                 });
         }
 
-        function speakText(text) {
-            const utterance = new SpeechSynthesisUtterance(text);
-            utterance.lang = 'ru-RU'; 
-            utterance.rate = 1.1; 
-            
-            // Когда бот закончил говорить, возвращаем статус обратно
-            utterance.onend = function() {
-                statusEl.innerText = "Ожидаю сообщения...";
-                statusEl.style.color = "#4caf50";
-            };
-
-            window.speechSynthesis.speak(utterance);
-        }
-
-        // Важный момент для браузеров: иногда им нужен первый "клик" по странице, 
-        // чтобы разрешить воспроизведение звука. Но в OBS Browser Source это работает сразу.
-        
-        // Стучимся в базу каждые 2 секунды
-        setInterval(checkTtsQueue, 2000);
+        // Запускаем бесконечный цикл проверок
+        pollTts();
     </script>
 </body>
 </html>

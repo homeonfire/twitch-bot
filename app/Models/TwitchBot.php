@@ -14,5 +14,7 @@ class TwitchBot extends Model
         'system_prompt',       // Это для текстового чата
         'voice_system_prompt', // 🚀 А это для голоса
         'is_active',
+        'elevenlabs_api_key',   // 🚀 Добавили
+        'elevenlabs_voice_id',  // 🚀 Добавили
     ];
 }
