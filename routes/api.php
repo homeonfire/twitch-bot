@@ -28,7 +28,7 @@ Route::get('/tts/{channel}/next', function ($channel) {
                 'Content-Type' => 'application/json'
             ])->post("https://api.elevenlabs.io/v1/text-to-speech/{$bot->elevenlabs_voice_id}", [
                 'text' => $message->message,
-                'model_id' => 'eleven_turbo_v2_5',
+                'model_id' => 'eleven_multilingual_v2',
                 'language_code' => 'ru',
             ]);
 
