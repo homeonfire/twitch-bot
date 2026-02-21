@@ -9,8 +9,8 @@ use App\Models\TwitchBot;
 use App\Models\OutgoingChatMessage;
 
 // 1. Отдаем сообщения в OBS (с генерацией голоса ElevenLabs или фоллбэком)
+// 1. Отдаем сообщения в OBS (с генерацией голоса ElevenLabs, Google или фоллбэком)
 Route::get('/tts/{channel}/next', function ($channel) {
-    // Берем самое старое сообщение ТОЛЬКО для запрошенного канала
     $message = TtsMessage::where('channel', $channel)->oldest()->first();
     
     if (!$message) {
@@ -18,9 +18,10 @@ Route::get('/tts/{channel}/next', function ($channel) {
     }
 
     $bot = TwitchBot::where('twitch_channel', $channel)->first();
-    $audioBase64 = null; // По умолчанию аудио нет, клиент будет читать встроенным голосом
+    $audioBase64 = null; 
+    $audioUrl = null; // 🚀 Сюда положим ссылку на Гугл
 
-    // Пробуем сгенерировать голос через ElevenLabs, если есть настройки
+    // 1. Пробуем сгенерировать голос через ElevenLabs
     if ($bot && $bot->elevenlabs_api_key && $bot->elevenlabs_voice_id) {
         try {
             $response = Http::withHeaders([
@@ -33,21 +34,29 @@ Route::get('/tts/{channel}/next', function ($channel) {
             ]);
 
             if ($response->successful()) {
-                // Если всё ок, кодируем MP3 в Base64
                 $audioBase64 = 'data:audio/mpeg;base64,' . base64_encode($response->body());
             } else {
-                Log::warning("ElevenLabs Error для {$channel}: " . $response->body());
+                Log::warning("ElevenLabs Error: " . $response->body());
             }
         } catch (\Exception $e) {
-            Log::error("ElevenLabs Exception для {$channel}: " . $e->getMessage());
+            Log::error("ElevenLabs Exception: " . $e->getMessage());
         }
+    }
+
+    // 🚀 2. Если ElevenLabs не сработал (нет ключа или токенов) — подключаем Google Translate!
+    if (!$audioBase64) {
+        // У Google API лимит на длину текста (около 200 символов). 
+        // Обрезаем текст, чтобы запрос не упал с ошибкой, и кодируем для URL
+        $safeText = urlencode(mb_substr($message->message, 0, 200));
+        $audioUrl = "https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=ru&q={$safeText}";
     }
 
     $data = [
         'status' => 'success', 
         'username' => $message->username, 
         'message' => $message->message,
-        'audio_base64' => $audioBase64 // Отправляем аудио (или null, если была ошибка/нет ключа)
+        'audio_base64' => $audioBase64,
+        'audio_url' => $audioUrl // 🚀 Передаем ссылку на гугл в браузер
     ];
     
     $message->delete(); 

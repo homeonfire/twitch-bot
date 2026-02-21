@@ -41,22 +41,29 @@
                     // Проверяем статус ответа (мы задали status: 'success' или 'empty' в API)
                     if (data.status === 'success' && data.message) {
                         
-                        // Если есть звук от ElevenLabs
+                        /// 1. Сначала проверяем, есть ли крутой звук от ElevenLabs
                         if (data.audio_base64) {
                             console.log("🎵 Воспроизвожу крутой голос ElevenLabs...");
                             const audio = new Audio(data.audio_base64);
-                            
-                            audio.onended = () => {
-                                setTimeout(pollTts, 1000);
-                            };
-                            
+                            audio.onended = () => setTimeout(pollTts, 1000);
                             audio.play().catch(e => {
-                                console.error("Ошибка воспроизведения аудио (возможно, нет прав), включаю робота:", e);
+                                console.error("Ошибка аудио:", e);
                                 fallbackSpeech(data.message, pollTts);
                             });
+                            
+                        // 🚀 2. Если ElevenLabs нет, но сервер дал ссылку на Google Translate
+                        } else if (data.audio_url) {
+                            console.log("🌐 Включаю классического Google-робота...");
+                            const audio = new Audio(data.audio_url);
+                            audio.onended = () => setTimeout(pollTts, 1000);
+                            audio.play().catch(e => {
+                                console.error("Google TTS заблокирован, включаю браузерного робота:", e);
+                                fallbackSpeech(data.message, pollTts);
+                            });
+
+                        // 3. Если вообще всё сломалось — читаем браузером
                         } else {
-                            // Если аудио нет (ElevenLabs не настроен или нет токенов)
-                            console.log("🤖 Токенов нет, читаю обычным голосом Windows/macOS...");
+                            console.log("🤖 Читаю обычным голосом Windows/macOS...");
                             fallbackSpeech(data.message, pollTts);
                         }
                     } else {
