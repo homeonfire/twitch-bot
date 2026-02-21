@@ -12,10 +12,10 @@
         function fallbackSpeech(text, callback) {
             const utterThis = new SpeechSynthesisUtterance(text);
             utterThis.lang = 'ru-RU';
-            utterThis.rate = 1.1; // Чуть быстрее обычного
+            utterThis.rate = 1.1; 
             
             utterThis.onend = function() {
-                setTimeout(callback, 1000); // Ждем секунду и проверяем дальше
+                setTimeout(callback, 1000);
             };
             
             utterThis.onerror = function() {
@@ -28,31 +28,39 @@
         function pollTts() {
             if (!currentChannel) return;
 
-            fetch(`/api/tts/${currentChannel}/pop`)
-                .then(res => res.json())
+            // 🚀 ИСПРАВЛЕНА ССЫЛКА: теперь стучимся на /next
+            fetch(`/api/tts/${currentChannel}/next`)
+                .then(res => {
+                    // Защита: если сервер вернул ошибку (например, 404 или 500), не пытаемся читать это как JSON
+                    if (!res.ok) {
+                        throw new Error(`HTTP error! status: ${res.status}`);
+                    }
+                    return res.json();
+                })
                 .then(data => {
-                    if (data.text) {
-                        // Если сервер прислал нам сгенерированное аудио от ElevenLabs
+                    // Проверяем статус ответа (мы задали status: 'success' или 'empty' в API)
+                    if (data.status === 'success' && data.message) {
+                        
+                        // Если есть звук от ElevenLabs
                         if (data.audio_base64) {
-                            console.log("Воспроизвожу ElevenLabs MP3...");
+                            console.log("🎵 Воспроизвожу крутой голос ElevenLabs...");
                             const audio = new Audio(data.audio_base64);
                             
                             audio.onended = () => {
                                 setTimeout(pollTts, 1000);
                             };
                             
-                            // Если браузер заблокировал автовоспроизведение
                             audio.play().catch(e => {
-                                console.error("Ошибка воспроизведения аудио, включаю фоллбэк:", e);
-                                fallbackSpeech(data.text, pollTts);
+                                console.error("Ошибка воспроизведения аудио (возможно, нет прав), включаю робота:", e);
+                                fallbackSpeech(data.message, pollTts);
                             });
                         } else {
-                            // Если токенов нет или API не настроен - старый добрый робот
-                            console.log("Токенов нет, читаю обычным голосом...");
-                            fallbackSpeech(data.text, pollTts);
+                            // Если аудио нет (ElevenLabs не настроен или нет токенов)
+                            console.log("🤖 Токенов нет, читаю обычным голосом Windows/macOS...");
+                            fallbackSpeech(data.message, pollTts);
                         }
                     } else {
-                        // Очередь пуста, проверяем через 2 секунды
+                        // Сообщений нет, статус 'empty', ждем 2 секунды
                         setTimeout(pollTts, 2000);
                     }
                 })
@@ -62,7 +70,6 @@
                 });
         }
 
-        // Запускаем бесконечный цикл проверок
         pollTts();
     </script>
 </body>
