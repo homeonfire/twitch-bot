@@ -87,7 +87,10 @@ class TwitchListen extends Command
 
                         $this->info("[#{$twitchChannel}] {$username}: {$message}");
 
-                        $viewer = Viewer::firstOrCreate(['username' => $lowerUsername]);
+                        $viewer = Viewer::firstOrCreate([
+                            'channel' => $twitchChannel,
+                            'username' => $lowerUsername
+                        ]);
                         $viewer->increment('messages_count');
 
                         if (!in_array($username, $greetedUsers)) {
