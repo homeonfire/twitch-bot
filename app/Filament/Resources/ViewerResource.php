@@ -94,7 +94,8 @@ class ViewerResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            // 🚀 ПОДКЛЮЧИЛИ ТАБЛИЦУ СООБЩЕНИЙ
+            RelationManagers\ChatMessagesRelationManager::class,
         ];
     }
 
