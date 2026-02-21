@@ -23,17 +23,19 @@ class ViewerResource extends Resource
     {
         return $form
             ->schema([
+                Forms\Components\TextInput::make('channel')
+                    ->label('Канал стримера')
+                    ->required()
+                    ->maxLength(255),
                 Forms\Components\TextInput::make('username')
+                    ->label('Ник зрителя')
                     ->required()
                     ->maxLength(255),
                 Forms\Components\TextInput::make('messages_count')
+                    ->label('Количество сообщений')
                     ->required()
                     ->numeric()
                     ->default(0),
-                Forms\Components\TextInput::make('trust_factor')
-                    ->required()
-                    ->numeric()
-                    ->default(100),
             ]);
     }
 
@@ -41,34 +43,52 @@ class ViewerResource extends Resource
     {
         return $table
             ->columns([
+                Tables\Columns\TextColumn::make('channel')
+                    ->label('Канал')
+                    ->searchable()
+                    ->sortable()
+                    ->badge() // Красивая плашка вокруг названия канала
+                    ->color('info'),
                 Tables\Columns\TextColumn::make('username')
-                    ->searchable(),
+                    ->label('Зритель')
+                    ->searchable()
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('messages_count')
-                    ->numeric()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('trust_factor')
-                    ->numeric()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('created_at')
-                    ->dateTime()
+                    ->label('Сообщений')
                     ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->badge()
+                    ->color('success'),
                 Tables\Columns\TextColumn::make('updated_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->label('Последний актив')
+                    ->dateTime('d.m.Y H:i')
+                    ->sortable(),
             ])
+            ->defaultSort('messages_count', 'desc') // По умолчанию показываем Топ-чаттеран!
             ->filters([
-                //
+                // Фильтр-выпадашка для быстрого выбора канала
+                Tables\Filters\SelectFilter::make('channel')
+                    ->label('Фильтр по каналу')
+                    ->options(fn () => \App\Models\Viewer::query()
+                        ->distinct()
+                        ->pluck('channel', 'channel')
+                        ->toArray()
+                    ),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
+                Tables\Actions\DeleteAction::make(), // Можно будет удалять спамеров из статы
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ]);
+    }
+
+    // Запрещаем создавать зрителей руками через админку (только бот может их добавлять)
+    public static function canCreate(): bool
+    {
+        return false;
     }
 
     public static function getRelations(): array
