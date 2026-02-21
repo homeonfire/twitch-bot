@@ -44,7 +44,8 @@ Route::post('/voice/{channel}/ask', function (Request $request, $channel) {
     if (!$bot) return response()->json(['error' => 'Бот не найден'], 404);
 
     $text = $request->input('text');
-    $systemPrompt = $bot->system_prompt ?? 'Ты веселый помощник.';
+    // 🚀 Берем промпт для голоса. Если его вдруг нет, используем дефолтный.
+    $systemPrompt = $bot->voice_system_prompt ?? 'Ты голосовой ассистент. Отвечай кратко и без смайлов.';
 
     try {
         // Стучимся в DeepSeek

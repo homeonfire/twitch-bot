@@ -10,8 +10,9 @@ class TwitchBot extends Model
         'bot_username',
         'bot_oauth',
         'twitch_channel',
-        'system_prompt',
-        'is_active',
         'wake_word',
+        'system_prompt',       // Это для текстового чата
+        'voice_system_prompt', // 🚀 А это для голоса
+        'is_active',
     ];
 }
