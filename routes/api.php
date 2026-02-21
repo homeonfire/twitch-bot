@@ -45,10 +45,25 @@ Route::get('/tts/{channel}/next', function ($channel) {
 
     // 🚀 2. Если ElevenLabs не сработал (нет ключа или токенов) — подключаем Google Translate!
     if (!$audioBase64) {
-        // У Google API лимит на длину текста (около 200 символов). 
-        // Обрезаем текст, чтобы запрос не упал с ошибкой, и кодируем для URL
-        $safeText = urlencode(mb_substr($message->message, 0, 200));
-        $audioUrl = "https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=ru&q={$safeText}";
+        try {
+            $safeText = urlencode(mb_substr($message->message, 0, 200));
+            // Используем client=gtx, он работает стабильнее для API запросов
+            $googleUrl = "https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=ru&q={$safeText}";
+            
+            // Обязательно притворяемся браузером Windows, иначе Гугл отдаст 403 ошибку
+            $googleResponse = Http::withHeaders([
+                'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+            ])->get($googleUrl);
+
+            if ($googleResponse->successful()) {
+                // Кодируем mp3 от Гугла точно так же, как от ElevenLabs!
+                $audioBase64 = 'data:audio/mpeg;base64,' . base64_encode($googleResponse->body());
+            } else {
+                Log::warning("Google TTS Error: HTTP " . $googleResponse->status());
+            }
+        } catch (\Exception $e) {
+            Log::error("Google TTS Exception: " . $e->getMessage());
+        }
     }
 
     $data = [
