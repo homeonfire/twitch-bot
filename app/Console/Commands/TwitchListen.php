@@ -124,12 +124,22 @@ class TwitchListen extends Command
 
                 // 🚀 ПРОВЕРЯЕМ БАЗУ РАЗ В 2 СЕКУНДЫ НА НАЛИЧИЕ НОВЫХ ОТВЕТОВ ДЛЯ ЧАТА
                 if (microtime(true) - $lastDbCheckTime >= 2.0) {
+                    // 1. Проверяем, не выключили ли бота в админке
+                    $botConfig->refresh();
+                    if (!$botConfig->is_active) {
+                        $this->warn("Бот отключен в админке. Закрываю соединение...");
+                        @fclose($socket); // Закрываем сокет
+                        return; // Полностью выходим из команды и завершаем процесс!
+                    }
+
+                    // 2. Ищем сообщения из базы для отправки в чат
                     $outgoing = OutgoingChatMessage::where('channel', $twitchChannel)->oldest()->first();
                     if ($outgoing) {
-                        $this->info("📥 Найдено сообщение из базы для чата: {$outgoing->message}");
-                        $messageQueue[] = $outgoing->message; // Кидаем в очередь на отправку
-                        $outgoing->delete(); // Удаляем, чтобы не отправить дважды
+                        $this->info("📥 Отправляю в чат: {$outgoing->message}");
+                        $messageQueue[] = $outgoing->message;
+                        $outgoing->delete();
                     }
+                    
                     $lastDbCheckTime = microtime(true);
                 }
 
