@@ -12,6 +12,7 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Filament\Notifications\Notification;
 
 class TwitchBotResource extends Resource
 {
@@ -75,6 +76,55 @@ class TwitchBotResource extends Resource
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
+                
+                // 🚀 КНОПКА ЗАПУСКА
+                Tables\Actions\Action::make('start')
+                    ->label('Запустить')
+                    ->icon('heroicon-o-play')
+                    ->color('success')
+                    ->requiresConfirmation() // Спрашиваем "Вы уверены?"
+                    ->modalHeading('Запуск бота')
+                    ->modalDescription('Бот подключится к каналу и начнет слушать чат.')
+                    ->visible(fn ($record) => !$record->is_active) // Показываем, только если бот выключен
+                    ->action(function ($record) {
+                        // 1. Защита от двойного запуска: проверяем, не висит ли уже такой процесс в памяти
+                        exec("ps aux | grep 'artisan twitch:listen {$record->id}' | grep -v grep", $output);
+                        if (!empty($output)) {
+                            Notification::make()->title('Бот уже запущен в фоне!')->warning()->send();
+                            $record->update(['is_active' => true]);
+                            return;
+                        }
+
+                        // 2. Включаем бота в базе
+                        $record->update(['is_active' => true]);
+
+                        // 3. Формируем консольную команду (как nohup на сервере, только из PHP)
+                        $artisan = base_path('artisan');
+                        $logPath = storage_path("logs/bot_{$record->id}.log");
+                        $command = "nohup php {$artisan} twitch:listen {$record->id} > {$logPath} 2>&1 &";
+                        
+                        // 4. Запускаем!
+                        exec($command);
+                        
+                        Notification::make()->title('Бот успешно запущен в фоне!')->success()->send();
+                    }),
+                    
+                // 🛑 КНОПКА ОСТАНОВКИ
+                Tables\Actions\Action::make('stop')
+                    ->label('Остановить')
+                    ->icon('heroicon-o-stop')
+                    ->color('danger')
+                    ->requiresConfirmation()
+                    ->modalHeading('Остановка бота')
+                    ->modalDescription('Бот отключится от чата. Это займет пару секунд.')
+                    ->visible(fn ($record) => $record->is_active) // Показываем, только если бот включен
+                    ->action(function ($record) {
+                        // Просто выключаем тумблер в БД. 
+                        // Цикл while(true) в TwitchListen.php сам увидит это и завершится!
+                        $record->update(['is_active' => false]);
+                        
+                        Notification::make()->title('Отправлен сигнал на остановку')->success()->send();
+                    }),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
