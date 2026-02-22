@@ -122,7 +122,7 @@ export default function Welcome({ auth }) {
                             <InteractiveFeatureCard 
                                 icon={<Brain className="w-8 h-8 text-purple-400" />}
                                 title="Память как у слона"
-                                description="Бот помнит, о чем вы говорили 5 минут назад, и отлично знает локальные мемы с прошлых стримов. Никаких золотых рыбок."
+                                description="Бот помнит, о чем вы говорили, и отлично знает локальные мемы с прошлых стримов. Никаких золотых рыбок."
                             />
                             <InteractiveFeatureCard 
                                 icon={<Mic className="w-8 h-8 text-blue-400" />}
@@ -158,7 +158,7 @@ export default function Welcome({ auth }) {
                         <MessageSquare className="w-12 h-12 text-purple-400 mx-auto mb-6" />
                         <h2 className="text-4xl font-bold mb-6">Хочешь такого же бота на свой канал?</h2>
                         <p className="text-xl text-gray-300 mb-8">Места в закрытом бета-тесте ограничены. Успей подать заявку и получи фишку, которой еще нет у других стримеров.</p>
-                        <a href="https://t.me/ТВОЯ_ТЕЛЕГА" target="_blank" rel="noreferrer" className="inline-block px-10 py-5 bg-white text-black font-extrabold rounded-xl hover:bg-gray-200 transition-transform hover:scale-105 shadow-[0_0_40px_rgba(255,255,255,0.5)]">
+                        <a href="https://t.me/igreskiv" target="_blank" rel="noreferrer" className="inline-block px-10 py-5 bg-white text-black font-extrabold rounded-xl hover:bg-gray-200 transition-transform hover:scale-105 shadow-[0_0_40px_rgba(255,255,255,0.5)]">
                             Записаться на закрытый тест
                         </a>
                     </div>
@@ -184,7 +184,7 @@ export default function Welcome({ auth }) {
                     <div>
                         <h4 className="text-white font-semibold mb-4 text-base">Контакты</h4>
                         <ul className="space-y-2">
-                            <li><a href="https://t.me/ТВОЯ_ТЕЛЕГА" className="hover:text-purple-400 transition">Связь со мной (Telegram)</a></li>
+                            <li><a href="https://t.me/igreskiv" className="hover:text-purple-400 transition">Связь со мной (Telegram)</a></li>
                             <li><a href="https://twitch.tv/trenertvs" className="hover:text-purple-400 transition">Мой Twitch-канал</a></li>
                         </ul>
                     </div>
