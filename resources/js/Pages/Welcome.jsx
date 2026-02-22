@@ -3,7 +3,6 @@ import { motion } from 'framer-motion';
 import { Terminal, Mic, Brain, Sparkles, Twitch, ArrowRight, Zap, Shield, MessageSquare } from 'lucide-react';
 
 export default function Welcome({ auth }) {
-    // Анимация для контейнеров, чтобы элементы появлялись по очереди
     const containerVariants = {
         hidden: { opacity: 0 },
         visible: {
@@ -19,17 +18,14 @@ export default function Welcome({ auth }) {
 
     return (
         <div className="min-h-screen bg-[#0a0a0b] text-gray-100 font-sans selection:bg-purple-500/30 overflow-x-hidden">
-            {/* Идеальное SEO */}
             <Head>
-                <title>AI Stream Bot | Закрытый бета-тест нейросети для Twitch</title>
-                <meta name="description" content="Интерактивный ИИ-бот для Twitch. Нейросеть с долгосрочной памятью (RAG), озвучкой голосом в OBS через ElevenLabs и DeepSeek. Удерживай аудиторию на стриме 24/7." />
-                <meta name="keywords" content="twitch бот, ии для стрима, нейросеть для твича, ai stream bot, RAG память, озвучка чата, deepseek twitch, elevenlabs" />
+                <title>AI Stream Bot | Умный бот для твоего Twitch</title>
+                <meta name="description" content="Добавь на стрим виртуального соведущего. Бот общается как живой зритель, отвечает голосом в OBS и запоминает все шутки и мемы твоего канала." />
+                <meta name="keywords" content="twitch бот, ии для стрима, нейросеть для твича, ai stream bot, умный чат бот, озвучка чата" />
             </Head>
 
-            {/* Декоративный фоновый свет */}
             <div className="fixed top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[600px] bg-purple-600/10 blur-[150px] rounded-full pointer-events-none z-0" />
             
-            {/* Навигация */}
             <nav className="fixed w-full z-50 bg-[#0a0a0b]/80 backdrop-blur-md border-b border-white/5">
                 <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
                     <div className="flex items-center gap-2 font-bold text-2xl tracking-tight relative z-10">
@@ -37,18 +33,15 @@ export default function Welcome({ auth }) {
                         <span><span className="text-purple-500">AI</span>StreamBot</span>
                     </div>
                     <div className="flex items-center gap-6 relative z-10">
-                        {/* 🚀 ИЗМЕНЕНИЕ 1: Яркая, белая кнопка Live Тест с подсветкой */}
                         <a href="https://twitch.tv/trenertvs" target="_blank" rel="noreferrer" className="flex items-center gap-2 text-sm font-bold text-white hover:text-purple-300 transition drop-shadow-[0_0_8px_rgba(145,70,255,0.8)]">
                             <Twitch className="w-5 h-5 text-purple-400" />
                             LIVE ТЕСТ
                         </a>
-                        {/* Кнопки кабинета и входа убраны для создания эффекта закрытого клуба */}
                     </div>
                 </div>
             </nav>
 
             <main className="relative z-10">
-                {/* Секция Hero с интерактивным демо */}
                 <section className="pt-40 pb-20 lg:pt-48 lg:pb-32 max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
                     <motion.div 
                         variants={containerVariants} 
@@ -67,12 +60,12 @@ export default function Welcome({ auth }) {
                         <motion.h1 variants={itemVariants} className="text-5xl lg:text-7xl font-extrabold tracking-tight mb-6 leading-[1.1]">
                             Бот, который <br />
                             <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-500">
-                                помнит твой лор
+                                шарит за твой лор
                             </span>
                         </motion.h1>
 
                         <motion.p variants={itemVariants} className="text-xl text-gray-400 mb-10 leading-relaxed max-w-xl">
-                            Включи ИИ-со-ведущего на своем Twitch-канале. Он общается как живой человек, отвечает голосом в OBS и обладает векторной памятью — помнит локальные мемы и контекст прошлых стримов.
+                            Добавь на стрим виртуального бро. Он общается как живой зритель, отвечает крутым голосом прямо на трансляции и запоминает каждую шутку, мем и факт о твоем канале.
                         </motion.p>
 
                         <motion.div variants={itemVariants} className="flex flex-col sm:flex-row gap-4">
@@ -86,7 +79,6 @@ export default function Welcome({ auth }) {
                         </motion.div>
                     </motion.div>
 
-                    {/* Интерактивный виджет чата */}
                     <motion.div 
                         initial={{ opacity: 0, x: 50, rotateY: -10 }}
                         animate={{ opacity: 1, x: 0, rotateY: 0 }}
@@ -98,19 +90,18 @@ export default function Welcome({ auth }) {
                             <div className="flex items-center justify-between border-b border-white/10 pb-4 mb-2">
                                 <div className="flex items-center gap-2">
                                     <Twitch className="w-5 h-5 text-purple-400" />
-                                    <span className="font-semibold text-sm">Live Chat Simulation</span>
+                                    <span className="font-semibold text-sm">Пример из чата</span>
                                 </div>
                                 <span className="text-xs text-gray-500 flex items-center gap-1">
-                                    <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span> REC
+                                    <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span> LIVE
                                 </span>
                             </div>
                             
                             <ChatMsg user="CS_Tryhard" color="text-green-400" msg="Бот, напомни, что стример советовал брать на эко?" />
                             
-                            {/* Имитация "думающего" бота с RAG-памятью */}
                             <div className="bg-white/5 rounded-lg p-3 text-xs text-gray-400 font-mono flex flex-col gap-1 my-2">
-                                <div className="flex items-center gap-2"><Zap className="w-3 h-3 text-blue-400" /> [RAG] Поиск по базе...</div>
-                                <div className="text-gray-500 pl-5">Найдено: "На эко-раунде всегда беру P250 и флешку" (3 дня назад)</div>
+                                <div className="flex items-center gap-2"><Zap className="w-3 h-3 text-blue-400" /> Копаюсь в памяти...</div>
+                                <div className="text-gray-500 pl-5">Вспомнил: "На эко-раунде всегда беру P250 и флешку" (было 3 дня назад)</div>
                             </div>
 
                             <ChatMsg user="AI_Bot" isBot color="text-purple-400" msg="Слушай, CS_Tryhard, на прошлом стриме он говорил, что лучшая страта на эко — это закуп P250 и флешки. Дешево и сердито! 😎" />
@@ -120,58 +111,53 @@ export default function Welcome({ auth }) {
                     </motion.div>
                 </section>
 
-                {/* Секция: Почему это круто (Фичи) */}
                 <section id="features" className="py-24 bg-[#0e0e12] border-y border-white/5">
                     <div className="max-w-7xl mx-auto px-6">
                         <div className="text-center mb-16">
-                            <h2 className="text-3xl md:text-5xl font-bold mb-4">Больше, чем просто <span className="text-purple-500">команды</span></h2>
-                            <p className="text-gray-400 text-lg max-w-2xl mx-auto">Классические боты мертвы. Наш ИИ анализирует контекст, понимает сленг и создает шоу вместе с тобой.</p>
+                            <h2 className="text-3xl md:text-5xl font-bold mb-4">Обычные боты — <span className="text-purple-500">прошлый век</span></h2>
+                            <p className="text-gray-400 text-lg max-w-2xl mx-auto">Команды через восклицательный знак уже никого не удивляют. Наш бот понимает сленг, рофлит вместе с чатом и делает шоу.</p>
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                             <InteractiveFeatureCard 
                                 icon={<Brain className="w-8 h-8 text-purple-400" />}
-                                title="Гибридная память"
-                                description="Бот держит нить текущего разговора (MySQL) и помнит факты о зрителях с прошлых трансляций благодаря векторной базе Supabase."
+                                title="Память как у слона"
+                                description="Бот помнит, о чем вы говорили 5 минут назад, и отлично знает локальные мемы с прошлых стримов. Никаких золотых рыбок."
                             />
                             <InteractiveFeatureCard 
                                 icon={<Mic className="w-8 h-8 text-blue-400" />}
-                                title="Голос стрима"
-                                description="Генерируй аудио-ответы прямо в OBS. Используем топовые нейро-голоса от ElevenLabs или классический TTS."
+                                title="Живая озвучка"
+                                description="Бот отвечает не только текстом, но и голосом прямо на стриме. Можно выбрать супер-реалистичный голос диктора или смешной."
                             />
                             <InteractiveFeatureCard 
                                 icon={<Shield className="w-8 h-8 text-emerald-400" />}
-                                title="Свой характер"
-                                description="Задай боту системный промпт (DeepSeek). Он может быть душным экспертом по киберспорту или дружелюбным анимешником."
+                                title="Уникальный характер"
+                                description="Ты сам решаешь, кем будет бот: токсичным киберкотлетой, милой аниме-тян или мудрым дедом. Он подыграет любой атмосфере."
                             />
                         </div>
                     </div>
                 </section>
 
-                {/* Секция: Как это работает */}
                 <section id="how-it-works" className="py-24 relative">
                     <div className="max-w-7xl mx-auto px-6 text-center">
                         <h2 className="text-3xl md:text-5xl font-bold mb-16">Запуск за <span className="text-purple-500">3 минуты</span></h2>
                         
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-12 relative">
-                            {/* Декоративная линия между шагами на десктопе */}
                             <div className="hidden md:block absolute top-8 left-[16%] right-[16%] h-[2px] bg-gradient-to-r from-purple-500/0 via-purple-500/50 to-purple-500/0"></div>
                             
-                            <Step number="1" title="Заявка" desc="Оставь заявку на участие в закрытом бета-тестировании платформы." />
-                            <Step number="2" title="Настройка ключей" desc="Введи свои ключи DeepSeek и ElevenLabs в защищенном личном кабинете." />
-                            <Step number="3" title="Мотор!" desc="Выдай боту права модератора на Twitch, настрой OBS-виджет и наслаждайся." />
+                            <Step number="1" title="Заявка" desc="Напиши мне, и я выдам тебе доступ к закрытому тесту платформы." />
+                            <Step number="2" title="Настройка" desc="Подключаем бота к твоему Twitch-каналу и настраиваем его характер." />
+                            <Step number="3" title="Готово!" desc="Добавляем красивый виджет в OBS, и бот начинает развлекать твоих зрителей." />
                         </div>
                     </div>
                 </section>
                 
-                {/* CTA Секция - Закрытый тест */}
                 <section id="cta-closed" className="py-20 relative overflow-hidden">
                     <div className="absolute inset-0 bg-purple-900/20"></div>
                     <div className="max-w-4xl mx-auto px-6 relative z-10 text-center bg-[#0a0a0b]/50 backdrop-blur-xl border border-purple-500/30 p-12 rounded-3xl">
                         <MessageSquare className="w-12 h-12 text-purple-400 mx-auto mb-6" />
-                        <h2 className="text-4xl font-bold mb-6">Готов прокачать свой онлайн?</h2>
-                        <p className="text-xl text-gray-300 mb-8">Места в закрытом бета-тесте ограничены. Успей подать заявку и получи доступ к технологиям, которых нет у конкурентов.</p>
-                        {/* 🚀 ИЗМЕНЕНИЕ 3: Новая кнопка и текст */}
+                        <h2 className="text-4xl font-bold mb-6">Хочешь такого же бота на свой канал?</h2>
+                        <p className="text-xl text-gray-300 mb-8">Места в закрытом бета-тесте ограничены. Успей подать заявку и получи фишку, которой еще нет у других стримеров.</p>
                         <a href="https://t.me/ТВОЯ_ТЕЛЕГА" target="_blank" rel="noreferrer" className="inline-block px-10 py-5 bg-white text-black font-extrabold rounded-xl hover:bg-gray-200 transition-transform hover:scale-105 shadow-[0_0_40px_rgba(255,255,255,0.5)]">
                             Записаться на закрытый тест
                         </a>
@@ -179,7 +165,6 @@ export default function Welcome({ auth }) {
                 </section>
             </main>
 
-            {/* Footer */}
             <footer className="border-t border-white/5 bg-[#050505] pt-16 pb-8 text-sm text-gray-400">
                 <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
                     <div>
@@ -187,33 +172,31 @@ export default function Welcome({ auth }) {
                             <Sparkles className="text-purple-500 w-5 h-5" />
                             AI Stream Bot
                         </div>
-                        <p className="leading-relaxed">Платформа нового поколения для создателей контента. Объединяем мощь LLM и векторных баз данных для Twitch.</p>
+                        <p className="leading-relaxed">Умный ИИ-помощник для создателей контента. Делаем стримы интереснее, а чат — активнее.</p>
                     </div>
                     <div>
                         <h4 className="text-white font-semibold mb-4 text-base">Продукт</h4>
                         <ul className="space-y-2">
-                            <li><a href="#features" className="hover:text-purple-400 transition">Возможности</a></li>
+                            <li><a href="#features" className="hover:text-purple-400 transition">Что умеет бот</a></li>
                             <li><a href="#how-it-works" className="hover:text-purple-400 transition">Как подключить</a></li>
                         </ul>
                     </div>
                     <div>
                         <h4 className="text-white font-semibold mb-4 text-base">Контакты</h4>
                         <ul className="space-y-2">
-                            {/* 🚀 Не забудь поменять ссылку тут тоже */}
-                            <li><a href="https://t.me/ТВОЯ_ТЕЛЕГА" className="hover:text-purple-400 transition">Поддержка (Telegram)</a></li>
-                            <li><a href="https://twitch.tv/trenertvs" className="hover:text-purple-400 transition">Twitch Разработчика</a></li>
+                            <li><a href="https://t.me/ТВОЯ_ТЕЛЕГА" className="hover:text-purple-400 transition">Связь со мной (Telegram)</a></li>
+                            <li><a href="https://twitch.tv/trenertvs" className="hover:text-purple-400 transition">Мой Twitch-канал</a></li>
                         </ul>
                     </div>
                 </div>
                 <div className="max-w-7xl mx-auto px-6 text-center border-t border-white/5 pt-8">
-                    <p>© {new Date().getFullYear()} AI Stream Bot. Все права защищены.</p>
+                    <p>© {new Date().getFullYear()} AI Stream Bot. Делаем стриминг веселее.</p>
                 </div>
             </footer>
         </div>
     );
 }
 
-// Компонент сообщения чата
 function ChatMsg({ user, color, msg, isBot = false }) {
     return (
         <div className="flex gap-3 text-sm leading-relaxed items-start">
@@ -226,7 +209,6 @@ function ChatMsg({ user, color, msg, isBot = false }) {
     );
 }
 
-// Интерактивная карточка фичи (Светится при наведении)
 function InteractiveFeatureCard({ icon, title, description }) {
     return (
         <motion.div 
@@ -245,7 +227,6 @@ function InteractiveFeatureCard({ icon, title, description }) {
     );
 }
 
-// Компонент шага
 function Step({ number, title, desc }) {
     return (
         <div className="relative z-10 flex flex-col items-center group">
