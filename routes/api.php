@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Log;
 use App\Models\TtsMessage;
 use App\Models\TwitchBot;
 use App\Models\OutgoingChatMessage;
+use App\Jobs\VectorizeCustomText;
 
 // 1. Отдаем сообщения в OBS (с генерацией голоса ElevenLabs или фоллбэком)
 // 1. Отдаем сообщения в OBS (с генерацией голоса ElevenLabs, Google или фоллбэком)
@@ -98,41 +99,90 @@ Route::post('/voice/{channel}/ask', function (Request $request, $channel) {
     if (!$bot) return response()->json(['error' => 'Бот не найден'], 404);
 
     $text = $request->input('text');
-    // Берем промпт для голоса. Если его вдруг нет, используем дефолтный.
     $systemPrompt = $bot->voice_system_prompt ?? 'Ты голосовой ассистент. Отвечай кратко и без смайлов.';
 
+    $hfToken = env('HF_TOKEN');
+    $supabaseUrl = env('SUPABASE_URL');
+    $supabaseKey = env('SUPABASE_KEY');
+
+    // 🚀 1. ИЩЕМ СМЫСЛЫ: Векторизуем то, что ты спросил голосом
+    $questionEmbedding = Http::withToken($hfToken)
+        ->post('https://router.huggingface.co/hf-inference/models/intfloat/multilingual-e5-small/pipeline/feature-extraction', [
+            'inputs' => [$text]
+        ])->json()[0] ?? null;
+
+    $memoryContext = "";
+
+    // 🚀 2. ДОЛГОСРОЧНАЯ ПАМЯТЬ: Достаем факты из Supabase
+    if ($questionEmbedding) {
+        $searchResponse = Http::withHeaders([
+            'apikey' => $supabaseKey,
+            'Authorization' => 'Bearer ' . $supabaseKey,
+            'Content-Type' => 'application/json'
+        ])->post("{$supabaseUrl}/rest/v1/rpc/match_messages", [
+            'query_embedding' => $questionEmbedding,
+            'match_threshold' => 0.7,
+            'match_count' => 5,
+            'p_channel' => $channel,
+            'p_username' => $channel // Ищем в первую очередь твои старые фразы
+        ]);
+
+        if ($searchResponse->successful() && count($searchResponse->json()) > 0) {
+            $memoryContext = "Вот релевантные факты из прошлых диалогов:\n";
+            foreach ($searchResponse->json() as $mem) {
+                $memoryContext .= "- {$mem['content']}\n";
+            }
+        }
+    }
+
+    // 🚀 3. КРАТКОСРОЧНАЯ ПАМЯТЬ: Берем контекст чата
+    $recentHistory = \App\Models\ChatMessage::where('channel', $channel)->latest()->take(5)->get()->reverse();
+    $recentContext = "Последние сообщения из чата:\n";
+    foreach ($recentHistory as $msg) {
+        $recentContext .= "{$msg->username}: {$msg->message}\n";
+    }
+
+    // Формируем мега-промпт
+    $finalContext = $memoryContext . "\n" . $recentContext . "\nСтример {$channel} обращается к тебе голосом: {$text}";
+
     try {
-        // Стучимся в DeepSeek
         $response = Http::withToken(env('DEEPSEEK_API_KEY'))
             ->timeout(15)
             ->post('https://api.deepseek.com/chat/completions', [
                 'model' => 'deepseek-chat',
                 'messages' => [
                     ['role' => 'system', 'content' => $systemPrompt],
-                    ['role' => 'user', 'content' => "Стример спрашивает тебя голосом: $text"]
+                    ['role' => 'user', 'content' => $finalContext]
                 ]
             ]);
 
         if ($response->successful()) {
             $reply = $response->json('choices.0.message.content');
             
-            // Сохраняем в очередь TTS
             TtsMessage::create([
                 'channel' => $channel,
                 'username' => $bot->bot_username,
                 'message' => $reply
             ]);
 
-            // Сохраняем в очередь чата Twitch
             OutgoingChatMessage::create([
                 'channel' => $channel,
                 'message' => $reply
             ]);
 
+            // 🚀 4. СОХРАНЯЕМ В ДОЛГОСРОЧНУЮ ПАМЯТЬ (ЧЕРЕЗ ФОНОВУЮ ОЧЕРЕДЬ)
+            // Сохраняем твой голосовой запрос
+            $streamerMemory = "Стример {$channel} сказал голосом: \"{$text}\"";
+            VectorizeCustomText::dispatch($channel, $channel, $streamerMemory);
+
+            // Сохраняем голосовой ответ бота
+            $botMemory = "Бот ответил стримеру {$channel} голосом: \"{$reply}\"";
+            VectorizeCustomText::dispatch($channel, $bot->bot_username, $botMemory);
+
             return response()->json(['status' => 'success']);
         }
     } catch (\Exception $e) {
-        Log::error('Voice DeepSeek Error: ' . $e->getMessage());
+        \Illuminate\Support\Facades\Log::error('Voice DeepSeek Error: ' . $e->getMessage());
     }
 
     return response()->json(['error' => 'Ошибка нейросети'], 500);
