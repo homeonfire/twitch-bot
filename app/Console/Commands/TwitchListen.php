@@ -10,6 +10,7 @@ use App\Models\TtsMessage;
 use App\Models\TwitchBot;
 use App\Models\OutgoingChatMessage;
 use App\Models\ChatMessage;
+use App\Jobs\VectorizeChatMessage;
 
 class TwitchListen extends Command
 {
@@ -99,6 +100,9 @@ class TwitchListen extends Command
                             'username' => $username,
                             'message' => $message
                         ]);
+
+                        // 🚀 ДОБАВЛЯЕМ ВОТ ЭТО: Отправляем сообщение на векторизацию в фон!
+                        VectorizeChatMessage::dispatch($twitchChannel, $username, $message);
 
                         if (!in_array($username, $greetedUsers)) {
                             $greetedUsers[] = $username; 
