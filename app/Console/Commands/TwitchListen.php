@@ -248,7 +248,7 @@ class TwitchListen extends Command
 
                 // 🚀 5. ЗАПИСЫВАЕМ НОВЫЙ ОПЫТ В ДОЛГОСРОЧНУЮ ПАМЯТЬ
                 // Склеиваем вопрос и ответ, чтобы бот запомнил контекст диалога
-                $memoryText = "Зритель {$username} сказал: \"{$text}\". Бот ответил: \"{$reply}\".";
+                $memoryText = "Бот ответил зрителю {$username}: \"{$reply}\"";
                 
                 $memoryEmbedding = Http::withToken($hfToken)
                     ->post('https://router.huggingface.co/hf-inference/models/intfloat/multilingual-e5-small/pipeline/feature-extraction', [
