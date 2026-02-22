@@ -178,38 +178,98 @@ class TwitchListen extends Command
     // 🚀 ДОБАВИЛИ $channel В АРГУМЕНТЫ
     private function askDeepSeek($username, $text, $systemPrompt, $channel)
     {
-        // 1. Достаем последние 20 сообщений из этого канала
-        $history = ChatMessage::where('channel', $channel)
-            ->latest() // Берем с конца (самые новые)
-            ->take(20)
-            ->get()
-            ->reverse(); // Переворачиваем, чтобы они шли друг за другом по времени
+        $hfToken = env('HF_TOKEN');
+        $supabaseUrl = env('SUPABASE_URL');
+        $supabaseKey = env('SUPABASE_KEY');
 
-        // 2. Формируем текст контекста
-        $contextText = "Вот последние сообщения из чата для контекста:\n";
-        foreach ($history as $msg) {
-            $contextText .= "{$msg->username}: {$msg->message}\n";
+        // 1. ИЩЕМ СМЫСЛЫ: Получаем вектор текущего вопроса
+        $questionEmbedding = Http::withToken($hfToken)
+            ->post('https://router.huggingface.co/hf-inference/models/intfloat/multilingual-e5-small/pipeline/feature-extraction', [
+                'inputs' => [$text]
+            ])->json()[0] ?? null;
+
+        $memoryContext = "";
+
+        // 2. ДОЛГОСРОЧНАЯ ПАМЯТЬ: Ищем релевантные воспоминания в Supabase
+        if ($questionEmbedding) {
+            $searchResponse = Http::withHeaders([
+                'apikey' => $supabaseKey,
+                'Authorization' => 'Bearer ' . $supabaseKey,
+                'Content-Type' => 'application/json'
+            ])->post("{$supabaseUrl}/rest/v1/rpc/match_messages", [
+                'query_embedding' => $questionEmbedding,
+                'match_threshold' => 0.7, // Берем только уверенные совпадения (от 70%)
+                'match_count' => 5,       // Топ-5 фактов
+                'p_channel' => $channel,
+                'p_username' => $username
+            ]);
+
+            if ($searchResponse->successful() && count($searchResponse->json()) > 0) {
+                $memoryContext = "Вот релевантные факты из прошлых диалогов с этим зрителем (долгосрочная память):\n";
+                foreach ($searchResponse->json() as $mem) {
+                    $memoryContext .= "- {$mem['content']}\n";
+                }
+            }
         }
-        
-        $contextText .= "\nА теперь ответь пользователю {$username} на его сообщение: {$text}";
+
+        // 3. КРАТКОСРОЧНАЯ ПАМЯТЬ: Берем последние 5 сообщений из чата (чтобы не терять нить разговора)
+        $recentHistory = \App\Models\ChatMessage::where('channel', $channel)
+            ->latest()
+            ->take(5)
+            ->get()
+            ->reverse();
+
+        $recentContext = "Последние сообщения из чата (краткосрочная память):\n";
+        foreach ($recentHistory as $msg) {
+            $recentContext .= "{$msg->username}: {$msg->message}\n";
+        }
+
+        // 4. ФОРМИРУЕМ МЕГА-ПРОМПТ
+        $finalContext = $memoryContext . "\n" . $recentContext . "\nА теперь ответь пользователю {$username} на его сообщение: {$text}";
 
         try {
+            // Спрашиваем саму нейросеть
             $response = Http::withToken(env('DEEPSEEK_API_KEY'))
                 ->timeout(15)
                 ->post('https://api.deepseek.com/chat/completions', [
                     'model' => 'deepseek-chat',
                     'messages' => [
                         ['role' => 'system', 'content' => $systemPrompt],
-                        ['role' => 'user', 'content' => $contextText] // 🚀 ОТПРАВЛЯЕМ СКЛЕЕННЫЙ КОНТЕКСТ
+                        ['role' => 'user', 'content' => $finalContext]
                     ]
                 ]);
 
             if ($response->successful()) {
-                return $response->json('choices.0.message.content');
+                $reply = $response->json('choices.0.message.content');
+
+                // 🚀 5. ЗАПИСЫВАЕМ НОВЫЙ ОПЫТ В ДОЛГОСРОЧНУЮ ПАМЯТЬ
+                // Склеиваем вопрос и ответ, чтобы бот запомнил контекст диалога
+                $memoryText = "Зритель {$username} сказал: \"{$text}\". Бот ответил: \"{$reply}\".";
+                
+                $memoryEmbedding = Http::withToken($hfToken)
+                    ->post('https://router.huggingface.co/hf-inference/models/intfloat/multilingual-e5-small/pipeline/feature-extraction', [
+                        'inputs' => [$memoryText]
+                    ])->json()[0] ?? null;
+
+                if ($memoryEmbedding) {
+                    Http::withHeaders([
+                        'apikey' => $supabaseKey,
+                        'Authorization' => 'Bearer ' . $supabaseKey,
+                        'Content-Type' => 'application/json'
+                    ])->post("{$supabaseUrl}/rest/v1/chat_embeddings", [
+                        'channel' => $channel,
+                        'username' => $username,
+                        'content' => $memoryText,
+                        'embedding' => $memoryEmbedding
+                    ]);
+                }
+
+                return $reply;
             }
         } catch (\Exception $e) {
-            Log::error('DeepSeek Error: ' . $e->getMessage());
+            \Illuminate\Support\Facades\Log::error('DeepSeek/Vector Error: ' . $e->getMessage());
         }
+        
         return "Нейроны заискрили. Спроси чуть позже!";
     }
 }
