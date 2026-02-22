@@ -21,7 +21,7 @@ export default function Welcome({ auth }) {
         <div className="min-h-screen bg-[#0a0a0b] text-gray-100 font-sans selection:bg-purple-500/30 overflow-x-hidden">
             {/* Идеальное SEO */}
             <Head>
-                <title>AI Stream Bot | Нейросеть и умный бот для Twitch-канала</title>
+                <title>AI Stream Bot | Закрытый бета-тест нейросети для Twitch</title>
                 <meta name="description" content="Интерактивный ИИ-бот для Twitch. Нейросеть с долгосрочной памятью (RAG), озвучкой голосом в OBS через ElevenLabs и DeepSeek. Удерживай аудиторию на стриме 24/7." />
                 <meta name="keywords" content="twitch бот, ии для стрима, нейросеть для твича, ai stream bot, RAG память, озвучка чата, deepseek twitch, elevenlabs" />
             </Head>
@@ -37,19 +37,12 @@ export default function Welcome({ auth }) {
                         <span><span className="text-purple-500">AI</span>StreamBot</span>
                     </div>
                     <div className="flex items-center gap-6 relative z-10">
-                        <a href="https://twitch.tv/trenertvs" target="_blank" rel="noreferrer" className="hidden sm:flex items-center gap-2 text-sm font-semibold text-gray-400 hover:text-purple-400 transition">
-                            <Twitch className="w-4 h-4" />
-                            Live Тест
+                        {/* 🚀 ИЗМЕНЕНИЕ 1: Яркая, белая кнопка Live Тест с подсветкой */}
+                        <a href="https://twitch.tv/trenertvs" target="_blank" rel="noreferrer" className="flex items-center gap-2 text-sm font-bold text-white hover:text-purple-300 transition drop-shadow-[0_0_8px_rgba(145,70,255,0.8)]">
+                            <Twitch className="w-5 h-5 text-purple-400" />
+                            LIVE ТЕСТ
                         </a>
-                        {auth.user ? (
-                            <Link href={route('dashboard')} className="text-sm font-medium text-white bg-white/10 hover:bg-white/20 px-5 py-2.5 rounded-xl transition shadow-[0_0_15px_rgba(255,255,255,0.05)]">
-                                Кабинет стримера
-                            </Link>
-                        ) : (
-                            <Link href={route('login')} className="text-sm font-medium text-white bg-white/10 hover:bg-white/20 px-5 py-2.5 rounded-xl transition shadow-[0_0_15px_rgba(255,255,255,0.05)]">
-                                Войти
-                            </Link>
-                        )}
+                        {/* Кнопки кабинета и входа убраны для создания эффекта закрытого клуба */}
                     </div>
                 </div>
             </nav>
@@ -68,7 +61,7 @@ export default function Welcome({ auth }) {
                                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-purple-400 opacity-75"></span>
                                 <span className="relative inline-flex rounded-full h-2 w-2 bg-purple-500"></span>
                             </span>
-                            Нейросеть нового поколения
+                            Закрытый бета-тест
                         </motion.div>
 
                         <motion.h1 variants={itemVariants} className="text-5xl lg:text-7xl font-extrabold tracking-tight mb-6 leading-[1.1]">
@@ -83,8 +76,8 @@ export default function Welcome({ auth }) {
                         </motion.p>
 
                         <motion.div variants={itemVariants} className="flex flex-col sm:flex-row gap-4">
-                            <a href="https://t.me/ТВОЯ_ТЕЛЕГА" target="_blank" rel="noreferrer" className="group relative px-8 py-4 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl transition-all shadow-[0_0_30px_rgba(145,70,255,0.3)] hover:shadow-[0_0_50px_rgba(145,70,255,0.5)] flex items-center justify-center gap-2">
-                                Подключить на канал
+                            <a href="#cta-closed" className="group relative px-8 py-4 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl transition-all shadow-[0_0_30px_rgba(145,70,255,0.3)] hover:shadow-[0_0_50px_rgba(145,70,255,0.5)] flex items-center justify-center gap-2">
+                                Подать заявку на тест
                                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                             </a>
                             <a href="#how-it-works" className="px-8 py-4 bg-white/5 hover:bg-white/10 border border-white/10 text-white font-bold rounded-xl transition-all flex items-center justify-center">
@@ -164,23 +157,24 @@ export default function Welcome({ auth }) {
                             {/* Декоративная линия между шагами на десктопе */}
                             <div className="hidden md:block absolute top-8 left-[16%] right-[16%] h-[2px] bg-gradient-to-r from-purple-500/0 via-purple-500/50 to-purple-500/0"></div>
                             
-                            <Step number="1" title="Авторизация" desc="Залогинься через наш сайт. Мы создадим для тебя защищенный личный кабинет." />
-                            <Step number="2" title="Настройка ключей" desc="Введи свои ключи DeepSeek и ElevenLabs, чтобы полностью контролировать расходы." />
+                            <Step number="1" title="Заявка" desc="Оставь заявку на участие в закрытом бета-тестировании платформы." />
+                            <Step number="2" title="Настройка ключей" desc="Введи свои ключи DeepSeek и ElevenLabs в защищенном личном кабинете." />
                             <Step number="3" title="Мотор!" desc="Выдай боту права модератора на Twitch, настрой OBS-виджет и наслаждайся." />
                         </div>
                     </div>
                 </section>
                 
-                {/* CTA Секция */}
-                <section className="py-20 relative overflow-hidden">
+                {/* CTA Секция - Закрытый тест */}
+                <section id="cta-closed" className="py-20 relative overflow-hidden">
                     <div className="absolute inset-0 bg-purple-900/20"></div>
                     <div className="max-w-4xl mx-auto px-6 relative z-10 text-center bg-[#0a0a0b]/50 backdrop-blur-xl border border-purple-500/30 p-12 rounded-3xl">
                         <MessageSquare className="w-12 h-12 text-purple-400 mx-auto mb-6" />
                         <h2 className="text-4xl font-bold mb-6">Готов прокачать свой онлайн?</h2>
-                        <p className="text-xl text-gray-300 mb-8">Зрители обожают интерактив. Дай им возможность общаться с ИИ, который знает их по никам.</p>
-                        <Link href={route('register')} className="inline-block px-10 py-5 bg-white text-black font-extrabold rounded-xl hover:bg-gray-200 transition-transform hover:scale-105 shadow-[0_0_40px_rgba(255,255,255,0.3)]">
-                            Создать аккаунт бесплатно
-                        </Link>
+                        <p className="text-xl text-gray-300 mb-8">Места в закрытом бета-тесте ограничены. Успей подать заявку и получи доступ к технологиям, которых нет у конкурентов.</p>
+                        {/* 🚀 ИЗМЕНЕНИЕ 3: Новая кнопка и текст */}
+                        <a href="https://t.me/ТВОЯ_ТЕЛЕГА" target="_blank" rel="noreferrer" className="inline-block px-10 py-5 bg-white text-black font-extrabold rounded-xl hover:bg-gray-200 transition-transform hover:scale-105 shadow-[0_0_40px_rgba(255,255,255,0.5)]">
+                            Записаться на закрытый тест
+                        </a>
                     </div>
                 </section>
             </main>
@@ -200,12 +194,12 @@ export default function Welcome({ auth }) {
                         <ul className="space-y-2">
                             <li><a href="#features" className="hover:text-purple-400 transition">Возможности</a></li>
                             <li><a href="#how-it-works" className="hover:text-purple-400 transition">Как подключить</a></li>
-                            <li><a href="#" className="hover:text-purple-400 transition">Тарифы</a></li>
                         </ul>
                     </div>
                     <div>
                         <h4 className="text-white font-semibold mb-4 text-base">Контакты</h4>
                         <ul className="space-y-2">
+                            {/* 🚀 Не забудь поменять ссылку тут тоже */}
                             <li><a href="https://t.me/ТВОЯ_ТЕЛЕГА" className="hover:text-purple-400 transition">Поддержка (Telegram)</a></li>
                             <li><a href="https://twitch.tv/trenertvs" className="hover:text-purple-400 transition">Twitch Разработчика</a></li>
                         </ul>
