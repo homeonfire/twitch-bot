@@ -25,7 +25,7 @@ class TestVector extends Command
         $this->info("2. Получаем вектор из Hugging Face...");
         $hfToken = env('HF_TOKEN');
         $hfResponse = Http::withToken($hfToken)
-            ->post('https://api-inference.huggingface.co/pipeline/feature-extraction/intfloat/multilingual-e5-small', [
+            ->post('https://router.huggingface.co/hf-inference/models/intfloat/multilingual-e5-small/pipeline/feature-extraction', [
                 'inputs' => [$messageToRemember]
             ]);
 
@@ -66,7 +66,7 @@ class TestVector extends Command
         
         // Получаем вектор для вопроса
         $questionEmbedding = Http::withToken($hfToken)
-            ->post('https://api-inference.huggingface.co/pipeline/feature-extraction/intfloat/multilingual-e5-small', [
+            ->post('https://router.huggingface.co/hf-inference/models/intfloat/multilingual-e5-small/pipeline/feature-extraction', [
                 'inputs' => [$question]
             ])->json()[0];
 
